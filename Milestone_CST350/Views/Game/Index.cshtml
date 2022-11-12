@@ -1,0 +1,107 @@
+﻿@using Milestone_CST350.Models
+@model Milestone_CST350.Models.Board
+
+@{
+    string[] imagename = { "0.png", "1.png", "2.png", "3.png", "4.png", "5.png", "6.png", "7.png", "8.png", "bomb.png", "facingDown.png", "flagged.png", "sun.png" };
+}
+
+<style>
+    .game-button {
+        width: 70px;
+        height: 70px;
+    }
+
+    .cell-img {
+        width: 64px;
+    }
+
+    .cell {
+        width: 70px;
+        height: 70px;
+    }
+
+    .game-board {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .line-break {
+        flex-basis: 100%;
+        height: 0;
+    }
+</style>
+
+<p id="demo"></p>
+
+<div class="timer">
+    <span id="lblCount">0</span><p>sec</p>
+</div>
+<div>
+    <form asp-action="restart">
+        <input type="submit" value="Restart" />
+    </form>
+</div>
+<form>
+    <div class="game-board">
+        @for (int r = 0; r < Model.size; r++)
+        {
+
+            for (int c = 0; c < Model.size; c++)
+            {
+
+                if (c % 10 == 0)
+                {
+                    <div class="line-break"></div>
+                }
+
+                <div class=".game-button" id="@r+@c">
+                    <button id="startButton" class="cell" type="button" value="@r+@c" name="rowcol" onclick="StartTimer()" asp-controller="Game" asp-action="ButtonClick">
+                        <img class="cell-img" src="~/img/@imagename[@Model.grid[r, c].buttonState]" />
+                    </button>
+                </div>
+            }
+        }
+    </div>
+</form>
+
+<div class="messageArea">
+
+</div>
+
+<div class="player-stats">
+
+</div>
+
+
+<script type="text/javascript">
+    var interval = null;
+    var counter = 0;
+    console.log(counter);
+    function StartTimer() {
+        if (interval == null) {
+            interval = setInterval(function () {
+                document.getElementById("lblCount").innerHTML = counter;
+                counter++;
+                console.log(counter);
+            }, 1000);
+        }
+    }
+
+    function StopTimer() {
+        clearInterval(interval);
+        interval = null;
+        return counter;
+    }
+
+    var i = 1;
+    $("#startButton").click(function (e) {
+        setInterval(function () {
+            $("#stopWatch").html(i);
+            i++;
+        }, 1000);
+    });
+
+    $("#resetButton").click(function (e) {
+        i = 0;
+    });
+</script>
