@@ -17,7 +17,6 @@ namespace Milestone_CST350.DataServices
             bool success = false;
 
             SqlCommand command = new SqlCommand(sqlStatement, dbConnection);
-            //command.Parameters.Add("@Id", System.Data.SqlDbType.Int).Value = null;
             command.Parameters.Add("@FirstName", System.Data.SqlDbType.NVarChar, 50).Value = user.FirstName;
             command.Parameters.Add("@LastName", System.Data.SqlDbType.NVarChar, 50).Value = user.LastName;
             command.Parameters.Add("@Sex", System.Data.SqlDbType.NChar, 10).Value = user.Sex;
@@ -86,12 +85,11 @@ namespace Milestone_CST350.DataServices
             return user;
         }
 
-        public bool FindByUsernameAndPassword(string username, string password, SqlConnection dbConnection)
+        public int FindByUsernameAndPassword(string username, string password, SqlConnection dbConnection)
         {
             string sqlStatement = "Select * from dbo.Users where username LIKE @UserName AND password LIKE @Password";
 
-            // Will return true or false if found
-            bool success = false;
+            int result = -1;
 
             SqlCommand command = new SqlCommand(sqlStatement, dbConnection);
 
@@ -106,8 +104,11 @@ namespace Milestone_CST350.DataServices
 
                 if (reader.HasRows)
                 {
+                    while (reader.Read())
+                    {
+                        result = (int)reader[0];
+                    }
                     dbConnection.Close();
-                    success = true;
                 }
             }
             catch (Exception e)
@@ -116,7 +117,7 @@ namespace Milestone_CST350.DataServices
             }
 
             // Return if found
-            return success;
+            return result;
         }
 
         public bool DeleteUser(int id, SqlConnection dbConnection)

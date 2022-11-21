@@ -31,7 +31,7 @@ namespace Milestone_CST350.Services
             return service.FindById(id, dbConnection);
         }
 
-        public bool FindByUsernameAndPassword(string username, string password)
+        public int FindByUsernameAndPassword(string username, string password)
         {
             var dbConnection = database.DbConnection();
 

@@ -31,17 +31,20 @@
     }
 </style>
 
-<p id="demo"></p>
+<script type="text/javascript">
+</script>
 
 <div class="timer">
-    <span id="lblCount">0</span><p>sec</p>
+    <span id="lblCount">0</span>
 </div>
+
 <div>
     <form asp-action="restart">
-        <input type="submit" value="Restart" />
+        <input type="submit" value="Play Again" onclick="StopTimer();" />
     </form>
 </div>
-<form>
+
+<form asp-controller="Game" asp-action="ButtonClick">
     <div class="game-board">
         @for (int r = 0; r < Model.size; r++)
         {
@@ -55,7 +58,7 @@
                 }
 
                 <div class=".game-button" id="@r+@c">
-                    <button id="startButton" class="cell" type="button" value="@r+@c" name="rowcol" onclick="StartTimer()" asp-controller="Game" asp-action="ButtonClick">
+                    <button id="startButton" class="cell" type="submit" value="@r+@c" name="rowcol">
                         <img class="cell-img" src="~/img/@imagename[@Model.grid[r, c].buttonState]" />
                     </button>
                 </div>
@@ -71,37 +74,3 @@
 <div class="player-stats">
 
 </div>
-
-
-<script type="text/javascript">
-    var interval = null;
-    var counter = 0;
-    console.log(counter);
-    function StartTimer() {
-        if (interval == null) {
-            interval = setInterval(function () {
-                document.getElementById("lblCount").innerHTML = counter;
-                counter++;
-                console.log(counter);
-            }, 1000);
-        }
-    }
-
-    function StopTimer() {
-        clearInterval(interval);
-        interval = null;
-        return counter;
-    }
-
-    var i = 1;
-    $("#startButton").click(function (e) {
-        setInterval(function () {
-            $("#stopWatch").html(i);
-            i++;
-        }, 1000);
-    });
-
-    $("#resetButton").click(function (e) {
-        i = 0;
-    });
-</script>

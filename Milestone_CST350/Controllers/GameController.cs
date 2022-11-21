@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewEngines;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace Milestone_CST350.Controllers
 {
@@ -16,9 +17,15 @@ namespace Milestone_CST350.Controllers
     {
         GameService service = new GameService();
         public static Board gameBoard { get; set; }
+
+        public static PlayerStats player;
+
         public IActionResult Index()
         {
             gameBoard = newGame();
+            string userName = (string)TempData["user"];
+
+            player = service.setPlayer(userName, "medium");
             return View(gameBoard);
         }
 
@@ -28,17 +35,18 @@ namespace Milestone_CST350.Controllers
             int row = Convert.ToInt32(separate[0]);
             int col = Convert.ToInt32(separate[1]);
 
-            gameBoard.floodFill(row, col);
+            if (gameBoard.grid[row, col].buttonState != 11) 
+            {
+                gameBoard.floodFill(row, col);
 
-            if (service.HasGameLost(gameBoard, row, col))
-            {
-                PlayerStats player = service.setPlayer("danny", "medium");
-                return View("GameOver", player);
-            }
-            if (service.HasGameWon(gameBoard))
-            {
-                PlayerStats player = service.setPlayer("danny", "medium");
-                return View("GameWon", player);
+                if (service.HasGameLost(gameBoard, row, col))
+                {
+                    return View("GameOver", player);
+                }
+                if (service.HasGameWon(gameBoard))
+                {
+                    return View("GameWon", player);
+                }
             }
 
             return View("Index", gameBoard);
@@ -50,39 +58,41 @@ namespace Milestone_CST350.Controllers
             int row = Convert.ToInt32(separate[0]);
             int col = Convert.ToInt32(separate[1]);
 
-            gameBoard.floodFill(row, col);
+
+            if (gameBoard.grid[row, col].buttonState != 11) 
+            {
+                gameBoard.floodFill(row, col);
+            }
 
             string view = RenderRazorViewToString(this, "ShowOneButton", gameBoard);
             string message = "<h1>the game is in progress...</h1>";
-            string playerStatsString = "<hr /> <dl class='row'> <dt class='col - sm - 2'> Player: </dt> <dd class='col - sm - 10'> " + "" + " </dd> <dt class='col - sm - 2'> Difficulty: </dt> <dd class='col - sm - 10'> " + "" + " </dd> <dt class='col - sm - 2'> Score: </dt> <dd class='col - sm - 10'> " + "" + " </dd> </dl>";
-            var package = new { part1 = view, part2 = message, part3 = playerStatsString };
+            string playerStatsString = "<hr /> <dl class='row'> <dt class='col - sm - 2'> Player: </dt> <dd class='col - sm - 10'> " + player.playerName + " </dd> <dt class='col - sm - 2'> Difficulty: </dt> <dd class='col - sm - 10'> " + player.difficulty + " </dd> <dt class='col - sm - 2'> Score: </dt> <dd class='col - sm - 10'> " + 0 + " </dd> </dl>";
+            string gameOver = "0";
+            var package = new { part1 = view, part2 = message, part3 = playerStatsString, part4 = gameOver };
 
-            if (service.HasGameLost(gameBoard, row, col))
+            
+
+            if (service.HasGameLost(gameBoard, row, col) && gameBoard.grid[row, col].buttonState != 11)
             {
-                PlayerStats player = service.setPlayer("danny", "medium");
                 playerStatsString = "<hr /> <dl class='row'> <dt class='col - sm - 2'> Player: </dt> <dd class='col - sm - 10'> " + player.playerName + " </dd> <dt class='col - sm - 2'> Difficulty: </dt> <dd class='col - sm - 10'> " + player.difficulty + " </dd> <dt class='col - sm - 2'> Score: </dt> <dd class='col - sm - 10'> " + player.score + " </dd> </dl>";
                 gameBoard.revealAll();
                 view = RenderRazorViewToString(this, "ShowOneButton", gameBoard);
                 message = "<h1>You Lost!</h1>";
-                package = new { part1 = view, part2 = message, part3 = playerStatsString };
+                gameOver = "1";
+                package = new { part1 = view, part2 = message, part3 = playerStatsString, part4 = gameOver };
                 return Json(package);
-                //return PartialView("GameOver", player);
             }
             if (service.HasGameWon(gameBoard))
             {
-                PlayerStats player = service.setPlayer("danny", "medium");
                 playerStatsString = "<hr /> <dl class='row'> <dt class='col - sm - 2'> Player: </dt> <dd class='col - sm - 10'> " + player.playerName + " </dd> <dt class='col - sm - 2'> Difficulty: </dt> <dd class='col - sm - 10'> " + player.difficulty + " </dd> <dt class='col - sm - 2'> Score: </dt> <dd class='col - sm - 10'> " + player.score + " </dd> </dl>";
-
                 gameBoard.revealAll();
-
                 view = RenderRazorViewToString(this, "ShowOneButton", gameBoard);
                 message = "<h1>You Won!</h1>";
-                package = new { part1 = view, part2 = message, part3 = playerStatsString };
+                gameOver = "1";
+                package = new { part1 = view, part2 = message, part3 = playerStatsString, part4 = gameOver };
                 return Json(package);
-                //return PartialView("GameWon", player);
             }
             return Json(package);
-            //return PartialView("ShowOneButton", gameBoard);
         }
 
         public IActionResult RightClick(string rowcol)
@@ -105,7 +115,6 @@ namespace Milestone_CST350.Controllers
             var package = new { part1 = view, part2 = message };
 
             return Json(package);
-            //return PartialView("ShowOneButton", gameBoard);
         }
 
         public IActionResult restart()
