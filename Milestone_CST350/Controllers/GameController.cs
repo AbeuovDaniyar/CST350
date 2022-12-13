@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc.ViewEngines;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using Microsoft.AspNetCore.Http;
 
 namespace Milestone_CST350.Controllers
 {
@@ -18,17 +19,106 @@ namespace Milestone_CST350.Controllers
         GameService service = new GameService();
         public static Board gameBoard { get; set; }
 
+        const string SessionGameDifficulty = "_GameDifficulty";
+
+        public static string difficulty { get; set; }
+
         public static PlayerStats player;
 
-        public IActionResult Index()
+        public IActionResult Index(Board game)
         {
-            gameBoard = newGame();
-            string userName = (string)TempData["user"];
+            if (String.IsNullOrEmpty(HttpContext.Session.GetString(SessionGameDifficulty)))
+            {
+                HttpContext.Session.SetString(SessionGameDifficulty, "medium");
+                difficulty = "medium";
+            }
+            else
+            {
+                difficulty = HttpContext.Session.GetString(SessionGameDifficulty);
+            }
 
-            player = service.setPlayer(userName, "medium");
+            if (gameBoard == null)
+            {
+                gameBoard = newGame();
+            }
+            else 
+            {
+                gameBoard = game;
+            }           
+
+            string userName = HttpContext.Session.GetString("_Name");
+            player = service.setPlayer(userName, difficulty);
             return View(gameBoard);
         }
 
+        public IActionResult ChangeDifficulty(string difficultyLvlv) 
+        {
+            HttpContext.Session.SetString(SessionGameDifficulty, difficultyLvlv);
+            gameBoard = newGame();
+            player.difficulty = difficultyLvlv;
+            difficulty = difficultyLvlv;
+            return View("Index", gameBoard);
+        }
+
+        public IActionResult SaveGame()
+        {
+            //if currently playing a saved game then we update
+            if (HttpContext.Session.GetInt32("_GameId") > 0)
+            {
+                //set date and time
+                gameBoard.DateTime = DateTime.Now.ToString("MM/dd/yyyy h:mm tt");
+                gameBoard.GameData = Newtonsoft.Json.JsonConvert.SerializeObject(gameBoard);
+                gameBoard.UserId = (int)HttpContext.Session.GetInt32("_UserId");
+
+                if(service.UpdateGame((int)HttpContext.Session.GetInt32("_GameId"), gameBoard))
+                    return View("Index", gameBoard);
+            }
+            else 
+            {
+                //set date and time
+                gameBoard.DateTime = DateTime.Now.ToString("MM/dd/yyyy h:mm tt");
+                gameBoard.GameData = Newtonsoft.Json.JsonConvert.SerializeObject(gameBoard);
+                gameBoard.UserId = (int)HttpContext.Session.GetInt32("_UserId");
+
+                //save game to db an return view with game id (SaveGame method will return an integer of the last inserted game id)
+                if (service.SaveGame(gameBoard.UserId, gameBoard) > -1)
+                    return View("Index", gameBoard);
+            }
+            return View("Index", gameBoard);
+        }
+
+        public IActionResult LoadGame(int gameId)
+        {
+            HttpContext.Session.SetInt32("_GameId", gameId);
+            gameBoard = service.LoadGame(service.FindGameById(gameId));
+            return View("Index", gameBoard);
+        }
+
+        public bool UpdateGame(Board gameBoard)
+        {
+            return service.UpdateGame((int)HttpContext.Session.GetInt32("_GameId"), gameBoard);
+        }
+
+        public IActionResult DeleteGame(int gameId) 
+        {
+            if (service.DeleteGame(gameId))
+            {
+                gameBoard = newGame();
+                return View("Index", gameBoard);
+            }
+            else 
+            {
+                return RedirectToAction("ShowGames");
+            }
+        }
+
+        public IActionResult ShowGames()
+        {
+            List<Board> games = service.GetAllUserGames((int)HttpContext.Session.GetInt32("_UserId"));
+            return View("ShowGames", games);
+        }
+
+        /*
         public IActionResult ButtonClick(string rowcol)
         {
             string[] separate = rowcol.Split('+');
@@ -41,17 +131,19 @@ namespace Milestone_CST350.Controllers
 
                 if (service.HasGameLost(gameBoard, row, col))
                 {
+                    gameBoard.revealAll();
                     return View("GameOver", player);
                 }
                 if (service.HasGameWon(gameBoard))
                 {
+                    gameBoard.revealAll();
                     return View("GameWon", player);
                 }
             }
 
             return View("Index", gameBoard);
         }
-
+        */
         public IActionResult ShowOneButton(string rowcol)
         {
             string[] separate = rowcol.Split('+');
@@ -72,10 +164,11 @@ namespace Milestone_CST350.Controllers
 
             
 
-            if (service.HasGameLost(gameBoard, row, col) && gameBoard.grid[row, col].buttonState != 11)
+            if (gameBoard.grid[row, col].live && gameBoard.grid[row, col].buttonState != 11)
             {
-                playerStatsString = "<hr /> <dl class='row'> <dt class='col - sm - 2'> Player: </dt> <dd class='col - sm - 10'> " + player.playerName + " </dd> <dt class='col - sm - 2'> Difficulty: </dt> <dd class='col - sm - 10'> " + player.difficulty + " </dd> <dt class='col - sm - 2'> Score: </dt> <dd class='col - sm - 10'> " + player.score + " </dd> </dl>";
                 gameBoard.revealAll();
+
+                playerStatsString = "<hr /> <dl class='row'> <dt class='col - sm - 2'> Player: </dt> <dd class='col - sm - 10'> " + player.playerName + " </dd> <dt class='col - sm - 2'> Difficulty: </dt> <dd class='col - sm - 10'> " + player.difficulty + " </dd> <dt class='col - sm - 2'> Score: </dt> <dd class='col - sm - 10'> " + player.score + " </dd> </dl>";
                 view = RenderRazorViewToString(this, "ShowOneButton", gameBoard);
                 message = "<h1>You Lost!</h1>";
                 gameOver = "1";
@@ -84,8 +177,9 @@ namespace Milestone_CST350.Controllers
             }
             if (service.HasGameWon(gameBoard))
             {
-                playerStatsString = "<hr /> <dl class='row'> <dt class='col - sm - 2'> Player: </dt> <dd class='col - sm - 10'> " + player.playerName + " </dd> <dt class='col - sm - 2'> Difficulty: </dt> <dd class='col - sm - 10'> " + player.difficulty + " </dd> <dt class='col - sm - 2'> Score: </dt> <dd class='col - sm - 10'> " + player.score + " </dd> </dl>";
                 gameBoard.revealAll();
+
+                playerStatsString = "<hr /> <dl class='row'> <dt class='col - sm - 2'> Player: </dt> <dd class='col - sm - 10'> " + player.playerName + " </dd> <dt class='col - sm - 2'> Difficulty: </dt> <dd class='col - sm - 10'> " + player.difficulty + " </dd> <dt class='col - sm - 2'> Score: </dt> <dd class='col - sm - 10'> " + player.score + " </dd> </dl>";
                 view = RenderRazorViewToString(this, "ShowOneButton", gameBoard);
                 message = "<h1>You Won!</h1>";
                 gameOver = "1";
@@ -125,8 +219,10 @@ namespace Milestone_CST350.Controllers
 
         public Board newGame()
         {
-            Board newBoard = new Board(10, "medium");
-            newBoard.setupLiveNeighbors();
+            Board newBoard = new Board(10);
+            newBoard.setupLiveNeighbors(difficulty);
+            //reset game id
+            HttpContext.Session.SetInt32("_GameId", -1);
             return newBoard;
         }
 

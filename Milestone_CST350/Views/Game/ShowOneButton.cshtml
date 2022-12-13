@@ -14,10 +14,6 @@
             <div class="line-break"></div>
         }
 
-        <div class=".game-button" id="@r+@c">
-            <button class="cell" id="@r+@c" type="submit" value="@r+@c" name="rowcol" onclick="StartTimer();" asp-controller="Game" asp-action="ButtonClick">
-                <img class="cell-img" src="~/img/@imagename[@Model.grid[r,c].buttonState]" />
-            </button>
-        </div>
+        <input type="image" class="cell" id="@r+@c" value="@r+@c" name="rowcol" onclick="StartTimer();" src="~/img/@imagename[@Model.grid[r,c].buttonState]" />
     }
 }

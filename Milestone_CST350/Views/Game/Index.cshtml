@@ -31,46 +31,59 @@
     }
 </style>
 
-<script type="text/javascript">
-</script>
+<div class="container">
+    <div class="row">
+        <div class="col-sm">
+            <div>
+                <form asp-action="restart">
+                    <input type="submit" class="btn btn-primary" value="Play Again" onclick="StopTimer();" />
+                </form>
 
-<div class="timer">
-    <span id="lblCount">0</span>
-</div>
-
-<div>
-    <form asp-action="restart">
-        <input type="submit" value="Play Again" onclick="StopTimer();" />
-    </form>
-</div>
-
-<form asp-controller="Game" asp-action="ButtonClick">
-    <div class="game-board">
-        @for (int r = 0; r < Model.size; r++)
-        {
-
-            for (int c = 0; c < Model.size; c++)
-            {
-
-                if (c % 10 == 0)
-                {
-                    <div class="line-break"></div>
-                }
-
-                <div class=".game-button" id="@r+@c">
-                    <button id="startButton" class="cell" type="submit" value="@r+@c" name="rowcol">
-                        <img class="cell-img" src="~/img/@imagename[@Model.grid[r, c].buttonState]" />
-                    </button>
-                </div>
-            }
-        }
+                <form asp-action="SaveGame">
+                    <input type="submit" class="btn btn-primary" value="Save" />
+                </form>
+            </div>
+        </div>
+        <div class="col-sm">
+            <form asp-action="ChangeDifficulty">
+                <select class="form-select" name="difficultyLvlv">
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
+                <button type="submit" class="btn btn-secondary">Change Difficulty</button>
+            </form>
+        </div>
+        <div class="col-sm">
+            <div class="timer">
+                <span id="lblCount">0</span>sec
+            </div>
+        </div>
+        <div class="col-sm">
+            <form asp-action="ShowGames">
+                <input type="submit" class="btn btn-primary" value="Saved Games" />
+            </form>
+        </div>
     </div>
-</form>
+    <div class="row">
+        <div class="col-sm">
+            <div class="game-board mt-4">
+                @{
+                    Html.RenderPartial("ShowOneButton");
+                }
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm">
+            <div class="messageArea">
 
-<div class="messageArea">
+            </div>
+        </div>
+        <div class="col-sm">
+            <div class="player-stats">
 
-</div>
-
-<div class="player-stats">
-
+            </div>
+        </div>
+    </div>
 </div>

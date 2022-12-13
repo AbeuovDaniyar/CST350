@@ -12,7 +12,7 @@ namespace Milestone_CST350.Services
         DBConnection database = new DBConnection();
         UserDAO service = new UserDAO();
 
-        public bool RegisterUser(User model)
+        public int RegisterUser(User model)
         {
             var dbConnection = database.DbConnection();
 

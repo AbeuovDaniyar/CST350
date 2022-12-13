@@ -1,0 +1,34 @@
+﻿@model IEnumerable<Milestone_CST350.Models.Board>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Id)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.DateTime)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Id)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.DateTime)
+            </td>
+            <td>
+                @Html.ActionLink("Load Game", "LoadGame", new { gameId = item.Id }) |
+                @Html.ActionLink("Delete Game", "DeleteGame", new { gameId = item.Id })
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

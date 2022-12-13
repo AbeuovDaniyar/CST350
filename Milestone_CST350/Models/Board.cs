@@ -7,6 +7,10 @@ namespace Milestone_CST350.Models
 {
     public class Board
     {
+        public int Id { get; set; }
+        public string DateTime { get; set; }
+        public int UserId { get; set; }
+        public string GameData { get; set; }
         public int size { get; set; }
         public int minesCount { get; set; }
         public Cell[,] grid;
@@ -22,25 +26,11 @@ namespace Milestone_CST350.Models
         /// <param name="size"></param>
         /// <param name="grid"></param>
         /// <param name="difficulty"></param>
-        public Board(int sizeVal, string difficultyLvl)
+        public Board(int sizeVal)
         {
             this.size = sizeVal;
             grid = new Cell[sizeVal, sizeVal];
             setBoard = true;
-
-            //set up difficulty percentage based on the passed parameter
-            if (difficultyLvl == "easy" || difficultyLvl == "Easy")
-            {
-                difficulty = Convert.ToDecimal(size) * 0.25m;
-            }
-            else if (difficultyLvl == "medium" || difficultyLvl == "Medium")
-            {
-                difficulty = Convert.ToDecimal(size) * 0.45m;
-            }
-            else if (difficultyLvl == "hard" || difficultyLvl == "Hard")
-            {
-                difficulty = Convert.ToDecimal(size) * 0.90m;
-            }
 
             //populate 2d array with cell objects and the value for liveNeighbors to 0
             for (int i = 0; i < size; i++)
@@ -58,12 +48,26 @@ namespace Milestone_CST350.Models
         {
         }
 
-        public void setupLiveNeighbors()
+        public void setupLiveNeighbors(string difficultyLvl)
         {
             //get random number in range of the board eg. num x num. 
             //set the cell pos and count the number of mines placed and set the status of that cell to islive
             Random rand = new Random();
             int placedMines = 0;
+
+            //set up difficulty percentage based on the passed parameter
+            if (difficultyLvl == "easy" || difficultyLvl == "Easy")
+            {
+                difficulty = Convert.ToDecimal(size) * 0.4m;
+            }
+            else if (difficultyLvl == "medium" || difficultyLvl == "Medium")
+            {
+                difficulty = Convert.ToDecimal(size) * 0.7m;
+            }
+            else if (difficultyLvl == "hard" || difficultyLvl == "Hard")
+            {
+                difficulty = Convert.ToDecimal(size) * 1.0m;
+            }
 
             //loop to place mines based on the percentage derived from diff
             while (placedMines < difficulty)
@@ -85,12 +89,12 @@ namespace Milestone_CST350.Models
             int nc = 0;
 
             //if on mine then set neighbor count to 9
-            if (grid[x, y].live)
+            /*if (grid[x, y].live)
             {
                 //where the mine is
                 nc = 9;
                 grid[x, y].buttonState = 9;
-            }
+            }*/
             //check the neighbor cells (0-8) and calculate neighbor mines count
             if (x - 1 >= 0 && grid[x - 1, y].live)
             {
@@ -143,6 +147,38 @@ namespace Milestone_CST350.Models
             if (row < 0 || row >= size) { return; }
             if (col < 0 || col >= size) { return; }
 
+            //int count = calculateLiveNeighbors(row, col);
+
+            if (grid[row, col].live)
+            {
+                revealAll();
+                return;
+            }
+            else if (calculateLiveNeighbors(row, col) > 0)
+            {
+                grid[row, col].visited = true;
+                return;
+            }
+            else 
+            {
+                if (grid[row, col].visited == false)
+                {
+                    grid[row, col].visited = true;
+                    floodFill((row + 1), col);
+                    floodFill((row - 1), col);
+                    floodFill(row, (col + 1));
+                    floodFill(row, (col - 1));
+                    floodFill((row + 1), (col + 1));
+                    floodFill((row + 1), (col - 1));
+                    floodFill((row - 1), (col + 1));
+                    floodFill((row - 1), (col - 1));
+                }
+                else
+                {
+                    return;
+                }
+            }
+            /*
             int count = calculateLiveNeighbors(row, col);
 
             //check to see if the cell is has a liveneighbor count if it does simply set it visited
@@ -166,41 +202,40 @@ namespace Milestone_CST350.Models
             else
             {
                 return;
-            }
+            }*/
         }
 
         //get the total number of visited cells
         public int calcVisited()
         {
             int count = 0;
-            for (int c = 0; c < size; c++)
+            for (int r = 0; r < size; r++)
             {
-                for (int r = 0; r < size; r++)
+                for (int c = 0; c < size; c++)
                 {
-                    if (grid[c, r].visited)
+                    if (grid[r, c].visited)
                     {
                         count++;
                     }
                 }
             }
-            return count + 1;
+            return count;
         }
 
         public void revealAll()
         {
-            for (int c = 0; c < size; c++)
+            for (int r = 0; r < size; r++)
             {
-                for (int r = 0; r < size; r++)
+                for (int c = 0; c < size; c++)
                 {
-                    int count = calculateLiveNeighbors(r, c);
-
-                    if (grid[c, r].live)
+                    if (grid[r, c].live)
                     {
-                        grid[c, r].buttonState = 9; //bomb
+                        grid[r, c].buttonState = 9; //bomb
                     }
-                    else if (count > 0)
+                    else 
                     {
-                        grid[c, r].buttonState = count;
+                        int count = calculateLiveNeighbors(r, c);
+                        grid[r, c].buttonState = count;
                     }
                 }
             }

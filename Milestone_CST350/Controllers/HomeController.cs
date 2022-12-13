@@ -7,13 +7,15 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace Milestone_CST350.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-        UserService securityService = new UserService();
+        const string SessionUserId = "_UserId";
+        const string SessionUserName = "_Name";
 
         public HomeController(ILogger<HomeController> logger)
         {
@@ -22,10 +24,11 @@ namespace Milestone_CST350.Controllers
 
         public IActionResult Index()
         {
+            HttpContext.Session.SetInt32(SessionUserId, -1);
+            HttpContext.Session.SetString(SessionUserName, "");
             return View();
         }
 
-        //login
         public IActionResult Authenticate(User user)
         {
             UserService userService = new UserService();
@@ -33,34 +36,34 @@ namespace Milestone_CST350.Controllers
 
             if (result != -1)
             {
-                TempData["user"] = user.UserName;
-                //redirect to game board
+                //redirect to game board set session variables
+                HttpContext.Session.SetInt32(SessionUserId, result);
+                HttpContext.Session.SetString(SessionUserName, user.UserName);
                 return RedirectToAction("Index", "Game");
             }
             else
             {
                 //login failed
-                TempData["ErrorMessage"] = "Username or password is wrong";
-                return View("Index");
+                return View("LoginFailure", user.UserName);
             }
         }
 
-        //register
-        public IActionResult Register()
+        public IActionResult Register() 
         {
             return View();
         }
         public IActionResult RegisterUser(User user)
         {
-            var result = securityService.RegisterUser(user);
+            UserService securityService = new UserService();
+            int result = securityService.RegisterUser(user);
 
-            if (result)
+            if (result != -1)
             {
-                return View("~/Views/Home/Index.cshtml");
+                return View("Index");
             }
             else
             {
-                return View("Register", user);
+                return View("Register");
             }
         }
 
